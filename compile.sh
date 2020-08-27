@@ -23,6 +23,7 @@ EXT_IGBINARY_VERSION="3.1.4"
 EXT_DS_VERSION="2ddef84d3e9391c37599cb716592184315e23921"
 EXT_CRYPTO_VERSION="5f26ac91b0ba96742cc6284cd00f8db69c3788b2"
 EXT_RECURSIONGUARD_VERSION="d6ed5da49178762ed81dc0184cd34ff4d3254720"
+EXT_MONOGODB_VERSION="1.8.0"
 
 function write_out {
 	echo "[$1] $2"
@@ -817,6 +818,8 @@ get_github_extension "ds" "$EXT_DS_VERSION" "php-ds" "ext-ds"
 
 get_github_extension "recursionguard" "$EXT_RECURSIONGUARD_VERSION" "pmmp" "ext-recursionguard"
 
+get_pecl_extension "mongodb" "$EXT_MONOGODB_VERSION"
+
 echo -n "  crypto: downloading $EXT_CRYPTO_VERSION..."
 git clone https://github.com/bukka/php-crypto.git "$BUILD_DIR/php/ext/crypto" >> "$DIR/install.log" 2>&1
 cd "$BUILD_DIR/php/ext/crypto"
@@ -970,6 +973,7 @@ $HAVE_MYSQLI \
 --enable-ds \
 --with-crypto \
 --enable-recursionguard \
+--enable-mongodb \
 $HAVE_VALGRIND \
 $CONFIGURE_FLAGS >> "$DIR/install.log" 2>&1
 echo -n " compiling..."
