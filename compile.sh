@@ -16,8 +16,8 @@ SQLITE3_VERSION="3330000" #3.33.0
 
 EXT_PTHREADS_VERSION="e0f514dfde01c5e7e9cf94c43615918af482a45c"
 EXT_YAML_VERSION="2.1.0"
-EXT_LEVELDB_VERSION="f4ed9f57ee99ddbfe86439fb361cf52cc9676225"
-EXT_POCKETMINE_CHUNKUTILS_VERSION="master"
+EXT_LEVELDB_VERSION="9bcae79f71b81a5c3ea6f67e45ae9ae9fb2775a5"
+EXT_CHUNKUTILS2_VERSION="318b63b48f6b557f34795eabcebced2bf767a1f0"
 EXT_XDEBUG_VERSION="2.9.6"
 EXT_IGBINARY_VERSION="3.1.4"
 EXT_DS_VERSION="2ddef84d3e9391c37599cb716592184315e23921"
@@ -111,7 +111,6 @@ OPTIMIZE_TARGET=""
 DO_STATIC="no"
 DO_CLEANUP="yes"
 COMPILE_DEBUG="no"
-COMPILE_LEVELDB="no"
 HAVE_VALGRIND="--without-valgrind"
 HAVE_OPCACHE="yes"
 FSANITIZE_OPTIONS=""
@@ -119,7 +118,6 @@ FLAGS_LTO=""
 
 LD_PRELOAD=""
 
-COMPILE_POCKETMINE_CHUNKUTILS="no"
 COMPILE_GD="no"
 
 while getopts "::t:j:srdlxff:ugnva:" OPTION; do
@@ -148,10 +146,6 @@ while getopts "::t:j:srdlxff:ugnva:" OPTION; do
 			echo "[opt] Doing cross-compile"
 			IS_CROSSCOMPILE="yes"
 			;;
-		l)
-			echo "[opt] Will compile with LevelDB support"
-			COMPILE_LEVELDB="yes"
-			;;
 		s)
 			echo "[opt] Will compile everything statically"
 			DO_STATIC="yes"
@@ -161,10 +155,6 @@ while getopts "::t:j:srdlxff:ugnva:" OPTION; do
 			echo "[opt] Enabling abusive optimizations..."
 			DO_OPTIMIZE="yes"
 			OPTIMIZE_TARGET="$OPTARG"
-			;;
-		u)
-			echo "[opt] Will compile with PocketMine-ChunkUtils C extension for Anvil"
-			COMPILE_POCKETMINE_CHUNKUTILS="yes"
 			;;
 		g)
 			echo "[opt] Will enable GD2"
@@ -745,9 +735,7 @@ build_gmp
 build_openssl
 build_curl
 build_yaml
-if [ "$COMPILE_LEVELDB" == "yes" ]; then
-	build_leveldb
-fi
+build_leveldb
 if [ "$COMPILE_GD" == "yes" ]; then
 	build_libpng
 	build_libjpeg
@@ -828,20 +816,9 @@ git submodule update --init --recursive >> "$DIR/install.log" 2>&1
 cd "$BUILD_DIR"
 echo " done!"
 
-if [ "$COMPILE_LEVELDB" == "yes" ]; then
-	#PHP LevelDB
-	get_github_extension "leveldb" "$EXT_LEVELDB_VERSION" "reeze" "php-leveldb"
-	HAS_LEVELDB=--with-leveldb="$DIR/bin/php7"
-else
-	HAS_LEVELDB=""
-fi
+get_github_extension "leveldb" "$EXT_LEVELDB_VERSION" "reeze" "php-leveldb"
 
-if [ "$COMPILE_POCKETMINE_CHUNKUTILS" == "yes" ]; then
-	get_github_extension "pocketmine-chunkutils" "$EXT_POCKETMINE_CHUNKUTILS_VERSION" "dktapps" "PocketMine-C-ChunkUtils"
-	HAS_POCKETMINE_CHUNKUTILS=--enable-pocketmine-chunkutils
-else
-	HAS_POCKETMINE_CHUNKUTILS=""
-fi
+get_github_extension "chunkutils2" "$EXT_CHUNKUTILS2_VERSION" "pmmp" "ext-chunkutils2"
 
 
 echo -n "[PHP]"
@@ -932,10 +909,10 @@ $HAS_LIBPNG \
 $HAS_LIBJPEG \
 $HAS_GD \
 $HAVE_READLINE \
-$HAS_LEVELDB \
+--with-leveldb="$DIR/bin/php7" \
 $HAS_PROFILER \
 $HAS_DEBUG \
-$HAS_POCKETMINE_CHUNKUTILS \
+--enable-pocketmine-chunkutils \
 --enable-mbstring \
 --disable-mbregex \
 --enable-calendar \
@@ -983,7 +960,7 @@ fi
 sed -i=".backup" 's/PHP_BINARIES. pharcmd$/PHP_BINARIES)/g' Makefile
 sed -i=".backup" 's/install-programs install-pharcmd$/install-programs/g' Makefile
 
-if [[ "$COMPILE_LEVELDB" == "yes" ]] && [[ "$DO_STATIC" == "yes" ]]; then
+if [[ "$DO_STATIC" == "yes" ]]; then
 	sed -i=".backup" 's/--mode=link $(CC)/--mode=link $(CXX)/g' Makefile
 fi
 
