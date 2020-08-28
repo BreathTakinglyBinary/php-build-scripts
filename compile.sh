@@ -912,7 +912,7 @@ $HAVE_READLINE \
 --with-leveldb="$DIR/bin/php7" \
 $HAS_PROFILER \
 $HAS_DEBUG \
---enable-pocketmine-chunkutils \
+--enable-chunkutils2 \
 --enable-mbstring \
 --disable-mbregex \
 --enable-calendar \
