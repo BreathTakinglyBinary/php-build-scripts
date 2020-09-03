@@ -6,7 +6,7 @@ GMP_VERSION="6.2.0"
 CURL_VERSION="curl-7_71_1"
 READLINE_VERSION="6.3"
 YAML_VERSION="0.2.5"
-LEVELDB_VERSION="10f59b56bec1db3ffe42ff265afe22182073e0e2"
+LEVELDB_VERSION="84348b9b826cc280cde659185695d2170b54824c"
 LIBXML_VERSION="2.9.10"
 LIBPNG_VERSION="1.6.37"
 LIBJPEG_VERSION="9d"
@@ -14,9 +14,9 @@ OPENSSL_VERSION="1.1.1g"
 LIBZIP_VERSION="1.7.3"
 SQLITE3_VERSION="3330000" #3.33.0
 
-EXT_PTHREADS_VERSION="e0f514dfde01c5e7e9cf94c43615918af482a45c"
+EXT_PTHREADS_VERSION="d644826b5c70f24e5f77fc35554f86096575475a"
 EXT_YAML_VERSION="2.1.0"
-EXT_LEVELDB_VERSION="9bcae79f71b81a5c3ea6f67e45ae9ae9fb2775a5"
+EXT_LEVELDB_VERSION="2e3f740b55af1eb6dfc648dd451bcb7d6151c26c"
 EXT_CHUNKUTILS2_VERSION="318b63b48f6b557f34795eabcebced2bf767a1f0"
 EXT_XDEBUG_VERSION="2.9.6"
 EXT_IGBINARY_VERSION="3.1.4"
@@ -535,6 +535,8 @@ function build_curl {
 	--disable-ldaps \
 	--without-libidn \
 	--without-libidn2 \
+	--without-brotli \
+	--without-nghttp2 \
 	--with-zlib="$DIR/bin/php7" \
 	--with-ssl="$DIR/bin/php7" \
 	--enable-threaded-resolver \
@@ -578,25 +580,30 @@ function build_yaml {
 
 function build_leveldb {
 	echo -n "[LevelDB] downloading $LEVELDB_VERSION..."
-	download_file "https://github.com/pmmp/leveldb-mcpe/archive/$LEVELDB_VERSION.tar.gz" | tar -zx >> "$DIR/install.log" 2>&1
-	#download_file "https://github.com/Mojang/leveldb-mcpe/archive/$LEVELDB_VERSION.tar.gz" | tar -zx >> "$DIR/install.log" 2>&1
-	mv leveldb-mcpe-$LEVELDB_VERSION leveldb
+	download_file "https://github.com/pmmp/leveldb/archive/$LEVELDB_VERSION.tar.gz" | tar -zx >> "$DIR/install.log" 2>&1
+	mv leveldb-$LEVELDB_VERSION leveldb
 	echo -n " checking..."
 	cd leveldb
+	if [ "$DO_STATIC" != "yes" ]; then
+		local EXTRA_FLAGS="-DBUILD_SHARED_LIBS=ON"
+	else
+		local EXTRA_FLAGS=""
+	fi
+	cmake . \
+		-DCMAKE_INSTALL_PREFIX="$DIR/bin/php7" \
+		-DCMAKE_PREFIX_PATH="$DIR/bin/php7" \
+		-DLEVELDB_BUILD_TESTS=OFF \
+		-DLEVELDB_BUILD_BENCHMARKS=OFF \
+		-DLEVELDB_SNAPPY=OFF \
+		-DLEVELDB_ZSTD=OFF \
+		-DLEVELDB_TCMALLOC=OFF \
+		-DCMAKE_BUILD_TYPE=Release \
+		$EXTRA_FLAGS \
+		>> "$DIR/install.log" 2>&1
 	echo -n " compiling..."
-	if [ "$DO_STATIC" == "yes" ]; then
-		local LEVELDB_TARGET="staticlibs"
-	else
-		local LEVELDB_TARGET="sharedlibs"
-	fi
-	INSTALL_PATH="$DIR/bin/php7/lib" CFLAGS="$CFLAGS -I$DIR/bin/php7/include" CXXFLAGS="$CXXFLAGS -I$DIR/bin/php7/include" LDFLAGS="$LDFLAGS -L$DIR/bin/php7/lib" make $LEVELDB_TARGET -j $THREADS >> "$DIR/install.log" 2>&1
+	make -j $THREADS >> "$DIR/install.log" 2>&1
 	echo -n " installing..."
-	if [ "$DO_STATIC" == "yes" ]; then
-		cp out-static/lib*.a "$DIR/bin/php7/lib/"
-	else
-		cp out-shared/libleveldb.* "$DIR/bin/php7/lib/"
-	fi
-	cp -r include/leveldb "$DIR/bin/php7/include/leveldb"
+	make install >> "$DIR/install.log" 2>&1
 	cd ..
 	echo " done!"
 }
@@ -689,7 +696,23 @@ function build_libzip {
 	mv libzip-$LIBZIP_VERSION libzip >> "$DIR/install.log" 2>&1
 	echo -n " checking..."
 	cd libzip
-	cmake . -DCMAKE_PREFIX_PATH="$DIR/bin/php7" -DCMAKE_INSTALL_PREFIX="$DIR/bin/php7" -DCMAKE_INSTALL_LIBDIR=lib $CMAKE_LIBZIP_EXTRA_FLAGS -DBUILD_TOOLS=OFF -DBUILD_REGRESS=OFF -DBUILD_EXAMPLES=OFF -DBUILD_DOC=OFF -DENABLE_BZIP2=OFF -DENABLE_LZMA=OFF >> "$DIR/install.log" 2>&1
+
+	#we're using OpenSSL for crypto
+	cmake . \
+		-DCMAKE_PREFIX_PATH="$DIR/bin/php7" \
+		-DCMAKE_INSTALL_PREFIX="$DIR/bin/php7" \
+		-DCMAKE_INSTALL_LIBDIR=lib \
+		$CMAKE_LIBZIP_EXTRA_FLAGS \
+		-DBUILD_TOOLS=OFF \
+		-DBUILD_REGRESS=OFF \
+		-DBUILD_EXAMPLES=OFF \
+		-DBUILD_DOC=OFF \
+		-DENABLE_BZIP2=OFF \
+		-DENABLE_COMMONCRYPTO=OFF \
+		-DENABLE_GNUTLS=OFF \
+		-DENABLE_MBEDTLS=OFF \
+		-DENABLE_LZMA=OFF \
+		-DENABLE_ZSTD=OFF >> "$DIR/install.log" 2>&1
 	echo -n " compiling..."
 	make -j $THREADS >> "$DIR/install.log" 2>&1
 	echo -n " installing..."
@@ -816,7 +839,7 @@ git submodule update --init --recursive >> "$DIR/install.log" 2>&1
 cd "$BUILD_DIR"
 echo " done!"
 
-get_github_extension "leveldb" "$EXT_LEVELDB_VERSION" "reeze" "php-leveldb"
+get_github_extension "leveldb" "$EXT_LEVELDB_VERSION" "pmmp" "php-leveldb"
 
 get_github_extension "chunkutils2" "$EXT_CHUNKUTILS2_VERSION" "pmmp" "ext-chunkutils2"
 
@@ -968,26 +991,38 @@ make -j $THREADS >> "$DIR/install.log" 2>&1
 echo -n " installing..."
 make install >> "$DIR/install.log" 2>&1
 
-if [[ "$(uname -s)" == "Darwin" ]] && [[ "$IS_CROSSCOMPILE" != "yes" ]]; then
-	set +e
-	install_name_tool -delete_rpath "$DIR/bin/php7/lib" "$DIR/bin/php7/bin/php" >> "$DIR/install.log" 2>&1
-
-	IFS=$'\n' OTOOL_OUTPUT=($(otool -L "$DIR/bin/php7/bin/php"))
+function relativize_macos_library_paths {
+	IFS=$'\n' OTOOL_OUTPUT=($(otool -L "$1"))
 
 	for (( i=0; i<${#OTOOL_OUTPUT[@]}; i++ ))
 		do
 		CURRENT_DYLIB_NAME=$(echo ${OTOOL_OUTPUT[$i]} | sed 's# (compatibility version .*##' | xargs)
-		if [[ $CURRENT_DYLIB_NAME == "$DIR/bin/php7/lib/"*".dylib"* ]]; then
-			NEW_DYLIB_NAME=$(echo "$CURRENT_DYLIB_NAME" | sed "s{$DIR/bin/php7/lib{@loader_path/../lib{" | xargs)
-			install_name_tool -change "$CURRENT_DYLIB_NAME" "$NEW_DYLIB_NAME" "$DIR/bin/php7/bin/php" >> "$DIR/install.log" 2>&1
+		if [[ "$CURRENT_DYLIB_NAME" == "$DIR/bin/php7/"* ]]; then
+			NEW_DYLIB_NAME=$(echo "$CURRENT_DYLIB_NAME" | sed "s{$DIR/bin/php7{@loader_path/..{" | xargs)
+			install_name_tool -change "$CURRENT_DYLIB_NAME" "$NEW_DYLIB_NAME" "$1" >> "$DIR/install.log" 2>&1
+		elif [[ "$CURRENT_DYLIB_NAME" != "/usr/lib/"* ]] && [[ "$CURRENT_DYLIB_NAME" != "/System/"* ]] && [[ "$CURRENT_DYLIB_NAME" != "@loader_path"* ]] && [[ "$CURRENT_DYLIB_NAME" != "@rpath"* ]]; then
+			echo "[ERROR] Detected linkage to non-local non-system library $CURRENT_DYLIB_NAME by $1"
+			exit 1
 		fi
 	done
+}
 
-	install_name_tool -change "$DIR/bin/php7/lib/libssl.1.0.0.dylib" "@loader_path/../lib/libssl.1.0.0.dylib" "$DIR/bin/php7/lib/libcurl.4.dylib" >> "$DIR/install.log" 2>&1
-	install_name_tool -change "$DIR/bin/php7/lib/libcrypto.1.0.0.dylib" "@loader_path/../lib/libcrypto.1.0.0.dylib" "$DIR/bin/php7/lib/libcurl.4.dylib" >> "$DIR/install.log" 2>&1
-	chmod 0777 "$DIR/bin/php7/lib/libssl.1.0.0.dylib" >> "$DIR/install.log" 2>&1
-	install_name_tool -change "$DIR/bin/php7/lib/libcrypto.1.0.0.dylib" "@loader_path/libcrypto.1.0.0.dylib" "$DIR/bin/php7/lib/libssl.1.0.0.dylib" >> "$DIR/install.log" 2>&1
-	chmod 0755 "$DIR/bin/php7/lib/libssl.1.0.0.dylib" >> "$DIR/install.log" 2>&1
+function relativize_macos_all_libraries_paths {
+	set +e
+	for _library in $(ls "$DIR/bin/php7/lib/"*".dylib"); do
+		relativize_macos_library_paths "$_library"
+	done
+	set -e
+}
+
+if [[ "$(uname -s)" == "Darwin" ]] && [[ "$IS_CROSSCOMPILE" != "yes" ]]; then
+	set +e
+	install_name_tool -delete_rpath "$DIR/bin/php7/lib" "$DIR/bin/php7/bin/php" >> "$DIR/install.log" 2>&1
+
+	relativize_macos_library_paths "$DIR/bin/php7/bin/php"
+
+	relativize_macos_all_libraries_paths
+
 	set -e
 fi
 
