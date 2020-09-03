@@ -1,6 +1,7 @@
 # Custom PHP build scripts for PocketMine-MP
-[![Build Status](https://dev.azure.com/pocketmine/PHP-Builds/_apis/build/status/pmmp.php-build-scripts)](https://dev.azure.com/pocketmine/PHP-Builds/_build?definitionId=3&_a=summary&view=branches)
-## Looking for prebuilt binaries? Head over to our [Jenkins build server](https://jenkins.pmmp.io/job/PHP-7.3-Aggregate)
+[![Build Status](http://dev.weplaybtb.com:8111/guestAuth/app/rest/builds/buildType:Php_74/statusIcon.svg)](http://dev.weplaybtb.com:8111/guestAuth/buildConfiguration/Php_74)
+## Prebuilt Binaries
+- [Linux x86_64](http://dev.weplaybtb.com:8111/guestAuth/repository/download/Php_74/lastSuccessful/PHP_7.4_Linux_x86_64.tar.gz) 
 
 ## compile.sh
 
@@ -59,5 +60,3 @@ Script to install PocketMine-MP and PHP binaries on Unix platforms.
 
 Batch script utilizing Visual Studio on Windows to compile PHP binaries from sources.
 Ensure you have Visual Studio 2017, `git`, `7z` and `wget` installed in your PATH.
-
-Prebuilt binaries can be downloaded from our [AppVeyor build job](https://ci.appveyor.com/project/pmmp/php-build-scripts/build/artifacts).
