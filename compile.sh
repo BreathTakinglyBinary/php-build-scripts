@@ -762,12 +762,10 @@ build_leveldb
 if [ "$COMPILE_GD" == "yes" ]; then
 	build_libpng
 	build_libjpeg
-	HAS_GD="--with-gd"
-	HAS_LIBPNG="--with-png-dir=${DIR}/bin/php7"
-	HAS_LIBJPEG="--with-jpeg-dir=${DIR}/bin/php7"
+	HAS_GD="--enable-gd"
+	HAS_LIBJPEG="--with-jpeg"
 else
 	HAS_GD=""
-	HAS_LIBPNG=""
 	HAS_LIBJPEG=""
 fi
 
